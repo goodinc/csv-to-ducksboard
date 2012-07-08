@@ -16,7 +16,11 @@ class DucksboardTimeline
   end
 
   def reset
-    `curl -v -u #{@api_key}:x -X DELETE #{url} > /dev/null 2>&1`
+    response = new_session.delete("/values/#{@widget_id}")
+    if response.status != 200
+      puts "Ducksboard returned a failure on deleting existing values: #{response.inspect}"
+      exit
+    end
   end
 
   def save
@@ -24,20 +28,21 @@ class DucksboardTimeline
     data_str += @data.map{ |d| "{ \"timestamp\": #{d[:timestamp].strftime("%s")}, \"value\": #{d[:value]} }" }.join(',') 
     data_str += ']'
 
-    sess = Patron::Session.new
-    sess.base_url = "https://push.ducksboard.com/"
-    sess.username = @api_key
-    sess.password = "x"
-    response = sess.post("/values/#{@widget_id}", data_str)
+    response = new_session.post("/values/#{@widget_id}", data_str)
     if response.status != 200
-      puts "Ducksboard returned a failure: #{response.inspect}"
+      puts "Ducksboard returned a failure on posting new values: #{response.inspect}"
       exit
     end
   end
 
   private
 
-  def url
+  def new_session
+    sess = Patron::Session.new
+    sess.base_url = "https://push.ducksboard.com/"
+    sess.username = @api_key
+    sess.password = "x"
+    return sess
   end
 end
 
@@ -98,7 +103,7 @@ class CSVToDucksboardApp
           raise ArgumentError.new('--num-footerer-rows requires a value') if !(next_arg = argv.shift)
           @options[:num_footer_rows] = next_arg.to_i
         when "--reset-widget-first"
-          @options[:num_footer_rows] = true
+          @options[:reset_widget_first] = true
         else
           raise ArgumentError.new('filename must be the last option') if argv.any?  # if last, assume filename; else problem
           @options[:filename] = cur_arg
