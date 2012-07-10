@@ -62,6 +62,7 @@ class CSVToDucksboardApp
   def run(argv)
     raise ArgumentError.new('Not all required options given') if !handle_args(argv)
     read_csv_file
+    reset_widget if @options[:reset_widget_first]
     upload_to_ducksboard
   end
 
@@ -123,30 +124,36 @@ class CSVToDucksboardApp
     1.upto(@options[:num_footer_rows]) { @values.pop }
   end
 
+  def reset_widget
+    timeline = DucksboardTimeline.new(@options[:api_key], @options[:widget_id])
+    timeline.reset 
+  end
+
+  VALUES_PER_BATCH=100
   def upload_to_ducksboard
     raise ArgumentError.new('only two-column (datetime, value) data supported so far') if @options[:columns] != [:datetime, :value]
-    timeline = DucksboardTimeline.new(@options[:api_key], @options[:widget_id])
 
-    @values.each do |row|
-      time_components = row[0].split(/[^0-9]/).map{ |x| x.to_i }
-      timestamp = DateTime.new( *time_components )
-      feature_usage_val = row[1].to_i
-    
-      timeline << {:timestamp => timestamp, :value => feature_usage_val}
+    @values.each_slice(VALUES_PER_BATCH).to_a.each do |rows|
+      timeline = DucksboardTimeline.new(@options[:api_key], @options[:widget_id])
+      rows.each do |row|
+        time_components = row[0].split(/[^0-9]/).map{ |x| x.to_i }
+        timestamp = DateTime.new( *time_components )
+        feature_usage_val = row[1].to_i
+      
+        timeline << {:timestamp => timestamp, :value => feature_usage_val}
+      end
+      timeline.save
     end
-
-    timeline.reset if @options[:reset_widget_first]
-    timeline.save
   end
 
 end
 
 app = CSVToDucksboardApp.new
-#begin
+begin
   app.run(ARGV)
-#rescue ArgumentError => e
-#  puts e.message
-#  app.show_usage
-#  exit
-#end
+rescue ArgumentError => e
+  puts e.message
+  app.show_usage
+  exit
+end
 
