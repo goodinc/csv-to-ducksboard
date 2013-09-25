@@ -63,6 +63,7 @@ class CSVToDucksboardApp
                  :num_header_rows => 0,
                  :num_footer_rows => 0,
                  :reset_widget_first => false,
+                 :tsv => false,
                  :filename => nil }
     @values = []
   end
@@ -86,6 +87,7 @@ class CSVToDucksboardApp
     puts "\t--num-header-rows <NUM>\t\tDefault is 0"
     puts "\t--num-footer-rows <NUM>\t\tDefault is 0"
     puts "\t--reset-widget-first\t\tDefault is to just update without reset"
+    puts "\t--tsv\t\tTab delimited instead of comma"
   end
 
   private
@@ -113,6 +115,8 @@ class CSVToDucksboardApp
           @options[:num_footer_rows] = next_arg.to_i
         when "--reset-widget-first"
           @options[:reset_widget_first] = true
+        when "--tsv"
+          @options[:tsv] = true
         else
           raise ArgumentError.new('filename must be the last option') if argv.any?  # if last, assume filename; else problem
           @options[:filename] = cur_arg
@@ -127,7 +131,7 @@ class CSVToDucksboardApp
   end
 
   def read_csv_file
-    @values = CSV.read(@options[:filename])
+    @values = CSV.read(@options[:filename], { :col_sep => (@options[:tsv] ? "\t" : ",") })
     1.upto(@options[:num_header_rows]) { @values.shift }
     1.upto(@options[:num_footer_rows]) { @values.pop }
   end
