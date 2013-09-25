@@ -1,5 +1,5 @@
 #### CSV-to-Ducksboard
-This script lets you upload data from CSV files to a [Ducksboard](http://ducksboard.com) widget
+This script lets you upload data from CSV/TSV files to a [Ducksboard](http://ducksboard.com) widget
 
 #### Usage
     ~/code/csv-to-ducksboard $ cat test.csv 
@@ -15,3 +15,9 @@ This script lets you upload data from CSV files to a [Ducksboard](http://ducksbo
                                                       --column datetime --column value \
                                                       --num-header-rows 1 \
                                                       test.csv
+
+#### To Do
+- All input from stdin
+- Make it a gem
+- Use stderr/stdout as appropriate
+- Return error return values
