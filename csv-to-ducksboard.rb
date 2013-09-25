@@ -2,13 +2,18 @@
 
 require 'date'
 require 'csv'
-require 'patron'
+require 'net/https'
 
 class DucksboardTimeline
   def initialize(api_key, widget_id)
     @api_key = api_key
     @widget_id = widget_id
     @data = []
+
+    @push_domain = "https://push.ducksboard.com"
+    @path = "/v/#{@widget_id}"
+    @username = @api_key
+    @password = "dummy"
   end
 
   def <<(data_point)
@@ -16,11 +21,8 @@ class DucksboardTimeline
   end
 
   def reset
-    response = new_session.delete("/v/#{@widget_id}")
-    if response.status != 200
-      puts "Ducksboard returned a failure on deleting existing values: #{response.inspect}"
-      exit
-    end
+    req = Net::HTTP::Delete.new(@path)
+    send_with_auth req
   end
 
   def save
@@ -28,22 +30,27 @@ class DucksboardTimeline
     data_str += @data.map{ |d| "{ \"timestamp\": #{d[:timestamp].strftime("%s")}, \"value\": #{d[:value]} }" }.join(',') 
     data_str += ']'
 
-    response = new_session.post("/v/#{@widget_id}", data_str)
-    if response.status != 200
-      puts "Ducksboard returned a failure on posting new values: #{response.inspect}"
-      exit
-    end
+    req = Net::HTTP::Post.new(@path)
+    req.body = data_str
+    req.content_type = 'application/json'
+
+    send_with_auth req
   end
 
   private
 
-  def new_session
-    sess = Patron::Session.new
-    sess.base_url = "https://push.ducksboard.com"
-    sess.username = @api_key
-    sess.password = "x"
-    sess.enable_debug
-    return sess
+  def send_with_auth(req)
+    push_uri = URI @push_domain
+    http = Net::HTTP.new push_uri.host, 443
+    http.use_ssl = (push_uri.scheme == 'https')
+
+    req.basic_auth @username, @password
+
+    response = http.request(req)
+    if response.code != "200"
+      puts "Ducksboard returned a failure: #{response.body}"
+      exit
+    end
   end
 end
 
