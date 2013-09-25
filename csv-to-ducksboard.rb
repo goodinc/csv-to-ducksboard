@@ -16,7 +16,7 @@ class DucksboardTimeline
   end
 
   def reset
-    response = new_session.delete("/values/#{@widget_id}")
+    response = new_session.delete("/v/#{@widget_id}")
     if response.status != 200
       puts "Ducksboard returned a failure on deleting existing values: #{response.inspect}"
       exit
@@ -28,7 +28,7 @@ class DucksboardTimeline
     data_str += @data.map{ |d| "{ \"timestamp\": #{d[:timestamp].strftime("%s")}, \"value\": #{d[:value]} }" }.join(',') 
     data_str += ']'
 
-    response = new_session.post("/values/#{@widget_id}", data_str)
+    response = new_session.post("/v/#{@widget_id}", data_str)
     if response.status != 200
       puts "Ducksboard returned a failure on posting new values: #{response.inspect}"
       exit
@@ -39,9 +39,10 @@ class DucksboardTimeline
 
   def new_session
     sess = Patron::Session.new
-    sess.base_url = "https://push.ducksboard.com/"
+    sess.base_url = "https://push.ducksboard.com"
     sess.username = @api_key
     sess.password = "x"
+    sess.enable_debug
     return sess
   end
 end
