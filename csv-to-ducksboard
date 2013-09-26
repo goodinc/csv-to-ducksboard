@@ -127,11 +127,17 @@ class CSVToDucksboardApp
   end
 
   def options_are_valid
-    return ( @options[:api_key] && @options[:widget_id] && @options[:columns] && @options[:filename] )
+    return ( @options[:api_key] && @options[:widget_id] && @options[:columns] )
   end
 
   def read_csv_file
-    @values = CSV.read(@options[:filename], { :col_sep => (@options[:tsv] ? "\t" : ",") })
+    if @options[:filename]
+      csv = CSV.open(@options[:filename], { :col_sep => (@options[:tsv] ? "\t" : ",") })
+    else
+      csv = CSV.new($stdin, { :col_sep => (@options[:tsv] ? "\t" : ",") })
+    end
+    @values = []
+    csv.each {|row| @values << row if row}
     1.upto(@options[:num_header_rows]) { @values.shift }
     1.upto(@options[:num_footer_rows]) { @values.pop }
   end
