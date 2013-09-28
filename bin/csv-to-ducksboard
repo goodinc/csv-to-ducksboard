@@ -131,11 +131,9 @@ class CSVToDucksboardApp
   end
 
   def read_csv_file
-    if @options[:filename]
-      csv = CSV.open(@options[:filename], { :col_sep => (@options[:tsv] ? "\t" : ",") })
-    else
-      csv = CSV.new($stdin, { :col_sep => (@options[:tsv] ? "\t" : ",") })
-    end
+    fh = @options[:filename] ? File.open(@options[:filename], 'r') : $stdin
+    csv = CSV::Reader.create(fh, @options[:tsv] ? "\t" : ",")
+
     @values = []
     csv.each {|row| @values << row if row}
     1.upto(@options[:num_header_rows]) { @values.shift }
