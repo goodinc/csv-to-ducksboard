@@ -131,9 +131,11 @@ class CSVToDucksboardApp
   end
 
   def read_csv_file
-    fh = @options[:filename] ? File.open(@options[:filename], 'r') : $stdin
-    csv = CSV::Reader.create(fh, @options[:tsv] ? "\t" : ",")
-
+    if @options[:filename]
+      csv = CSV.open(@options[:filename], { :col_sep => (@options[:tsv] ? "\t" : ",") })
+    else
+      csv = CSV.new($stdin, { :col_sep => (@options[:tsv] ? "\t" : ",") })
+    end
     @values = []
     csv.each {|row| @values << row if row}
     1.upto(@options[:num_header_rows]) { @values.shift }
@@ -154,7 +156,7 @@ class CSVToDucksboardApp
       rows.each do |row|
         time_components = row[0].split(/[^0-9]/).map{ |x| x.to_i }
         timestamp = DateTime.new( *time_components )
-        feature_usage_val = row[1].to_i
+        feature_usage_val = row[1].to_f
       
         timeline << {:timestamp => timestamp, :value => feature_usage_val}
       end

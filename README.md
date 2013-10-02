@@ -14,7 +14,7 @@ This script lets you upload data from CSV/TSV files to a [Ducksboard](http://duc
     ~/code/csv-to-ducksboard $ ./csv-to-ducksboard.rb --api-key <API KEY> --widget-id 64590 \
                                                       --column datetime --column value \
                                                       --num-header-rows 1 \
-                                                      test.csv
+                                                      --tsv test.csv
 
 #### To Do
 - All input from stdin
