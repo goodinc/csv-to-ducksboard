@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = "csv-to-ducksboard"
-  s.version = '0.1.2'
+  s.version = '0.1.4'
   s.has_rdoc = false
   s.bindir = 'bin'
   s.executables << 'csv-to-ducksboard'

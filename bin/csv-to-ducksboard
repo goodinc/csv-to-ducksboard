@@ -1,6 +1,5 @@
 #!/usr/bin/env ruby
 
-require 'date'
 require 'csv'
 require 'net/https'
 
@@ -27,7 +26,7 @@ class DucksboardTimeline
 
   def save
     data_str = '['
-    data_str += @data.map{ |d| "{ \"timestamp\": #{d[:timestamp].strftime("%s")}, \"value\": #{d[:value]} }" }.join(',') 
+    data_str += @data.map{ |d| "{ \"timestamp\": #{d[:timestamp].strftime("%s")}, \"value\": #{d[:value]} }" }.join(',')
     data_str += ']'
 
     req = Net::HTTP::Post.new(@path)
@@ -63,6 +62,7 @@ class CSVToDucksboardApp
                  :num_header_rows => 0,
                  :num_footer_rows => 0,
                  :reset_widget_first => false,
+                 :localtime => false,
                  :tsv => false,
                  :filename => nil }
     @values = []
@@ -84,6 +84,7 @@ class CSVToDucksboardApp
     puts "\t--column <COLUMN 1 TYPE> [--column <COLUMN 2 TYPE>]"
 
     puts "\nOptional:"
+    puts "\t--localtime\t\tDatetimes are local time (as opposed to UTC)"
     puts "\t--num-header-rows <NUM>\t\tDefault is 0"
     puts "\t--num-footer-rows <NUM>\t\tDefault is 0"
     puts "\t--reset-widget-first\t\tDefault is to just update without reset"
@@ -115,6 +116,8 @@ class CSVToDucksboardApp
           @options[:num_footer_rows] = next_arg.to_i
         when "--reset-widget-first"
           @options[:reset_widget_first] = true
+        when "--localtime"
+          @options[:localtime] = true
         when "--tsv"
           @options[:tsv] = true
         else
@@ -144,7 +147,7 @@ class CSVToDucksboardApp
 
   def reset_widget
     timeline = DucksboardTimeline.new(@options[:api_key], @options[:widget_id])
-    timeline.reset 
+    timeline.reset
   end
 
   VALUES_PER_BATCH=100
@@ -155,9 +158,8 @@ class CSVToDucksboardApp
       timeline = DucksboardTimeline.new(@options[:api_key], @options[:widget_id])
       rows.each do |row|
         time_components = row[0].split(/[^0-9]/).map{ |x| x.to_i }
-        timestamp = DateTime.new( *time_components )
+        timestamp = @options[:localtime] ? Time.local( *time_components ) : Time.utc( *time_components )
         feature_usage_val = row[1].to_f
-      
         timeline << {:timestamp => timestamp, :value => feature_usage_val}
       end
       timeline.save
